@@ -1,4 +1,4 @@
-module changeme
+module github.com/gueldenstone/vogonix
 
 go 1.21
 

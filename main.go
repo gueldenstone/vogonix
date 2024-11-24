@@ -1,10 +1,10 @@
 package main
 
 import (
-	"changeme/pkg/jira"
 	"embed"
 	"os"
 
+	"github.com/gueldenstone/vogonix/pkg/jira"
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/logger"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -15,7 +15,6 @@ import (
 var assets embed.FS
 
 func main() {
-
 	jira, err := jira.NewJiraInstance(os.Getenv("URL"), os.Getenv("MAIL"), os.Getenv("TOKEN"))
 	if err != nil {
 		panic(err)
