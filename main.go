@@ -3,8 +3,11 @@ package main
 import (
 	"embed"
 	"os"
+	"path/filepath"
 
+	"github.com/gueldenstone/vogonix/pkg/config"
 	"github.com/gueldenstone/vogonix/pkg/jira"
+	"github.com/gueldenstone/vogonix/pkg/storage"
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/logger"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -15,7 +18,26 @@ import (
 var assets embed.FS
 
 func main() {
-	jira, err := jira.NewJiraInstance(os.Getenv("URL"), os.Getenv("MAIL"), os.Getenv("TOKEN"))
+
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		panic(err)
+	}
+	configDir := filepath.Join(homeDir, ".vogonix")
+	os.Mkdir(configDir, 0755)
+	configFile := filepath.Join(configDir, "config.yml")
+	cfg, err := config.ReadConfig(configFile)
+	if err != nil {
+		panic(err)
+	}
+
+	store, err := storage.NewStorage(filepath.Join(configDir, "data.db"))
+	if err != nil {
+		panic(err)
+	}
+	defer store.Close()
+
+	jira, err := jira.NewJiraInstance(cfg.Url, cfg.User, cfg.Token, store)
 	if err != nil {
 		panic(err)
 	}

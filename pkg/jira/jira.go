@@ -6,25 +6,27 @@ import (
 	"time"
 
 	v3 "github.com/ctreminiom/go-atlassian/jira/v3"
+	"github.com/gueldenstone/vogonix/pkg/storage"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 	str2dur "github.com/xhit/go-str2duration/v2"
 )
 
 const (
 	jiraTimeLayout = "2006-01-02T15:04:05.000-0700"
+	bucketName     = "worklogs"
 )
 
 type TimerData struct {
-	currentDuration time.Duration
-	closeChan       chan bool
-	pauseChan       chan bool
-	ticker          *time.Ticker
+	closeChan chan bool
+	pauseChan chan bool
+	ticker    *time.Ticker
 }
 
 type JiraInstance struct {
 	ctx       context.Context
 	atlassian *v3.Client
 	timers    map[string]*TimerData
+	store     *storage.Storage
 }
 
 type Issue struct {
@@ -38,15 +40,17 @@ type Worklog struct {
 	Comment  string
 }
 
-func NewJiraInstance(url, user, token string) (*JiraInstance, error) {
+func NewJiraInstance(url, user, token string, store *storage.Storage) (*JiraInstance, error) {
 	atlassian, err := v3.New(nil, url)
 	if err != nil {
 		return nil, err
 	}
 	atlassian.Auth.SetBasicAuth(user, token)
+	store.AddBucket(bucketName)
 	return &JiraInstance{
 		atlassian: atlassian,
 		timers:    make(map[string]*TimerData),
+		store:     store,
 	}, nil
 }
 
@@ -78,8 +82,9 @@ func (jira JiraInstance) GetAssignedIssues() ([]Issue, error) {
 
 	issues := make([]Issue, 0)
 	for _, jira_issue := range jira_issues.Issues {
+		issueKey := jira_issue.Key
 		issues = append(issues, Issue{
-			Key:      jira_issue.Key,
+			Key:      issueKey,
 			Summary:  jira_issue.Fields.Summary,
 			Assignee: jira_issue.Fields.Assignee.DisplayName,
 		})
@@ -154,9 +159,10 @@ func (jira *JiraInstance) StartTimer(issueId string) {
 				paused = pause
 			case <-timerData.ticker.C:
 				if !paused {
-					timerData.currentDuration += 1 * time.Second
-					runtime.EventsEmit(jira.ctx, "timer_tick_"+issueId, timerData.currentDuration.Seconds())
-					jira.LogDebugf("tick for %s at: %s", issueId, timerData.currentDuration)
+					worklog, _ := jira.GetTimeFromStore(issueId)
+					worklog += 1 * time.Second
+					jira.UpdateTrackedTime(issueId, worklog)
+					jira.LogDebugf("tick for %s at: %s", issueId, worklog)
 				}
 			}
 		}
@@ -172,19 +178,48 @@ func (jira *JiraInstance) PauseTimer(issueId string) {
 func (jira *JiraInstance) ResetTimer(issueId string) {
 	if jira.timers[issueId] != nil {
 		jira.timers[issueId].closeChan <- true
-		runtime.EventsEmit(jira.ctx, "timer_tick_"+issueId, 0)
 		delete(jira.timers, issueId)
 	}
+	jira.UpdateTrackedTime(issueId, 0)
 }
 
 func (jira JiraInstance) GetCurrentTimerValue(issueId string) int {
-	if timerData, ok := jira.timers[issueId]; ok && timerData != nil {
-		return int(timerData.currentDuration.Seconds())
+	worklog, err := jira.GetTimeFromStore(issueId)
+	if err != nil {
+		jira.LogWarningf("unable to get worklog time for %s: %w", issueId, err)
+		return 0
 	}
-	return 0
+	return int(worklog.Seconds())
 }
 
-func (jira JiraInstance) SubmitWorklog(issueId string, seconds int) error {
+func (jira JiraInstance) SubmitWorklog(issueId string) error {
+	seconds := jira.GetCurrentTimerValue(issueId)
+	jira.ResetTimer(issueId)
 	jira.LogDebugf("Received %d seconds for %s", seconds, issueId)
 	return nil
+}
+
+func (jira JiraInstance) GetTimeFromStore(issueId string) (time.Duration, error) {
+	worklogStr, err := jira.store.GetValue(bucketName, issueId)
+	if err != nil {
+		return 0 * time.Second, fmt.Errorf("no stored time for %s: %w", issueId, err)
+	}
+	worklogTime, err := time.ParseDuration(worklogStr)
+	if err != nil {
+		return 0 * time.Second, fmt.Errorf("unable to parse time '%s' for %s: %w", worklogStr, issueId, err)
+	}
+	return worklogTime, nil
+}
+
+func (jira JiraInstance) WriteWorklogToStore(issueId string, t time.Duration) error {
+	return jira.store.UpdateValue(bucketName, issueId, t.String())
+}
+
+func (jira JiraInstance) UpdateTrackedTime(issueId string, trackedTime time.Duration) {
+	err := jira.WriteWorklogToStore(issueId, trackedTime)
+	if err != nil {
+		jira.LogWarningf("unable to update tracked time for %s: %w", issueId, err)
+		return
+	}
+	runtime.EventsEmit(jira.ctx, "timer_tick_"+issueId, int(trackedTime.Seconds()))
 }

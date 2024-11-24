@@ -15,20 +15,7 @@
     // local state for timer values
     $: timerValues = new Map<string, number>();
 
-    // Submit the timer value for a specific issue
-    function submitWorklog(issueKey: string) {
-        const timeSpent = timerValues[issueKey];
-        if (timeSpent !== undefined && timeSpent > 0) {
-            jira.SubmitWorklog(issueKey, timeSpent);
-        }
-    }
-
     $: issuesPromise = jira.GetAssignedIssues();
-
-    function handleSubmit(issueKey: string) {
-        submitWorklog(issueKey);
-        jira.ResetTimer(issueKey);
-    }
 
     function setupTimerEventListener(issueKey: string) {
         wails.EventsOn("timer_tick_" + issueKey, (currentTime) => {
@@ -85,7 +72,7 @@
                         <Button
                             size="xs"
                             class="h-10"
-                            on:click={() => handleSubmit(issueKey)}
+                            on:click={() => jira.SubmitWorklog(issueKey)}
                             ><Icons.ShareAllSolid /></Button
                         >
                     </div>

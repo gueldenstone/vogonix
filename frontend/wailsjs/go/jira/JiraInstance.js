@@ -14,6 +14,10 @@ export function GetCurrentTimerValue(arg1) {
   return window['go']['jira']['JiraInstance']['GetCurrentTimerValue'](arg1);
 }
 
+export function GetTimeFromStore(arg1) {
+  return window['go']['jira']['JiraInstance']['GetTimeFromStore'](arg1);
+}
+
 export function GetTimeSpentOnIssue(arg1) {
   return window['go']['jira']['JiraInstance']['GetTimeSpentOnIssue'](arg1);
 }
@@ -46,6 +50,14 @@ export function StartTimer(arg1) {
   return window['go']['jira']['JiraInstance']['StartTimer'](arg1);
 }
 
-export function SubmitWorklog(arg1, arg2) {
-  return window['go']['jira']['JiraInstance']['SubmitWorklog'](arg1, arg2);
+export function SubmitWorklog(arg1) {
+  return window['go']['jira']['JiraInstance']['SubmitWorklog'](arg1);
+}
+
+export function UpdateTrackedTime(arg1, arg2) {
+  return window['go']['jira']['JiraInstance']['UpdateTrackedTime'](arg1, arg2);
+}
+
+export function WriteWorklogToStore(arg1, arg2) {
+  return window['go']['jira']['JiraInstance']['WriteWorklogToStore'](arg1, arg2);
 }
