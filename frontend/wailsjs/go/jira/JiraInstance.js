@@ -22,6 +22,18 @@ export function GetWorkLogs(arg1) {
   return window['go']['jira']['JiraInstance']['GetWorkLogs'](arg1);
 }
 
+export function LogDebugf(arg1, arg2) {
+  return window['go']['jira']['JiraInstance']['LogDebugf'](arg1, arg2);
+}
+
+export function LogWarning(arg1) {
+  return window['go']['jira']['JiraInstance']['LogWarning'](arg1);
+}
+
+export function LogWarningf(arg1, arg2) {
+  return window['go']['jira']['JiraInstance']['LogWarningf'](arg1, arg2);
+}
+
 export function PauseTimer(arg1) {
   return window['go']['jira']['JiraInstance']['PauseTimer'](arg1);
 }
@@ -34,6 +46,6 @@ export function StartTimer(arg1) {
   return window['go']['jira']['JiraInstance']['StartTimer'](arg1);
 }
 
-export function SubmitWorklfowLogs(arg1, arg2) {
-  return window['go']['jira']['JiraInstance']['SubmitWorklfowLogs'](arg1, arg2);
+export function SubmitWorklog(arg1, arg2) {
+  return window['go']['jira']['JiraInstance']['SubmitWorklog'](arg1, arg2);
 }

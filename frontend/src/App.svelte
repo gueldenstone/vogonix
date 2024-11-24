@@ -1,41 +1,20 @@
 <script lang="ts">
   import "./app.css";
-  // Importing the Flowbite Card component
   import {
     Navbar,
     NavBrand,
     NavHamburger,
     NavUl,
-    NavLi,
     Button,
-    Card,
-    Spinner,
   } from "flowbite-svelte";
 
-  import * as jira from "../wailsjs/go/jira/JiraInstance";
-  import * as wails from "../wailsjs/runtime/runtime";
-  import JiraIssueKey from "./lib/IssueKey.svelte";
-  import StopWatch from "./lib/StopWatch.svelte";
-  import * as Icons from "flowbite-svelte-icons";
+  import IssueList from "@lib/IssueList.svelte";
 
-  // Example array of issues
-  let jiraBaseUrl;
-  jira.GetBaseUrl().then((url) => (jiraBaseUrl = url));
-  let issues = [];
-  function updateIssues() {
-    jira.GetAssignedIssues().then((jira_issues) => (issues = jira_issues));
-  }
-  // initialize
-  updateIssues();
+  let issueListRef: IssueList;
 
-  $: timerValues = new Map<string, number>();
-  let stopWatchRefs: StopWatch[] = [];
-
-  // Submit the timer value for a specific issue
-  function submitTime(issueKey: string) {
-    const timeSpent = timerValues.get(issueKey);
-    if (timeSpent !== undefined && timeSpent > 0) {
-      jira.SubmitWorklfowLogs(issueKey, timeSpent);
+  function handleRefresh() {
+    if (issueListRef) {
+      issueListRef.refresh();
     }
   }
 </script>
@@ -49,57 +28,10 @@
       >
     </NavBrand>
     <div class="flex md:order-2">
-      <Button pill size="sm" on:click={updateIssues}>Refresh</Button>
+      <Button pill size="sm" on:click={handleRefresh}>Refresh</Button>
       <NavHamburger />
     </div>
     <NavUl></NavUl>
   </Navbar>
-  <div class="flex p-2 gap-2 flex-col">
-    {#each issues as issue, index (issue.Key)}
-      <Card size="xl" class="h-full grow">
-        <div class="grid grid-cols-[70%,5%,20%,5%]">
-          <h5
-            class="flex text-lg text-left items-center font-bold text-gray-900"
-          >
-            <JiraIssueKey issueKey={issue.Key} baseUrl={jiraBaseUrl} /> - {issue.Summary}
-          </h5>
-          <p class="text-sm text-gray-700 flex items-center text-left">
-            {#await jira.GetTimeSpentOnIssue(issue.Key)}
-              <Spinner />
-            {:then time}
-              {time}
-            {:catch error}
-              Error!
-            {/await}
-          </p>
-          <StopWatch
-            time={timerValues[issue.Key]}
-            startCallback={() => jira.StartTimer(issue.Key)}
-            pauseCallback={() => jira.PauseTimer(issue.Key)}
-            resetCallback={() => jira.ResetTimer(issue.Key)}
-            setupCallback={() => {
-              wails.EventsOn("timer_tick_" + issue.Key, (currentTime) => {
-                wails.LogDebug("Tick");
-                timerValues[issue.Key] = currentTime;
-              });
-            }}
-          />
-          <div class="flex items-center">
-            <Button
-              size="xs"
-              class="h-10"
-              on:click={() => {
-                submitTime(issue.Key);
-                stopWatchRefs[index].resetTimer();
-              }}><Icons.ShareAllSolid /></Button
-            >
-          </div>
-        </div>
-      </Card>
-    {/each}
-  </div>
+  <IssueList bind:this={issueListRef} />
 </main>
-
-<style>
-  /* Adjust the grid layout for responsive display */
-</style>

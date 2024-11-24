@@ -2,6 +2,7 @@
     import { Button } from "flowbite-svelte";
     import * as Icons from "flowbite-svelte-icons";
     import { onMount } from "svelte";
+    import { formatDuration } from "@lib/util";
 
     // export let time: number = 0;
     export let isRunning: boolean = false;
@@ -17,14 +18,12 @@
     onMount(() => {
         setupCallback();
     });
-
-    // $: time = newTimeCallback();
 </script>
 
 <div class="stopwatch">
     <!-- Display the timer -->
     <div>
-        {time}
+        {formatDuration(time)}
     </div>
 
     <!-- Control buttons -->

@@ -12,10 +12,16 @@ export function GetTimeSpentOnIssue(arg1:string):Promise<string>;
 
 export function GetWorkLogs(arg1:string):Promise<Array<jira.Worklog>>;
 
+export function LogDebugf(arg1:string,arg2:Array<any>):Promise<void>;
+
+export function LogWarning(arg1:string):Promise<void>;
+
+export function LogWarningf(arg1:string,arg2:Array<any>):Promise<void>;
+
 export function PauseTimer(arg1:string):Promise<void>;
 
 export function ResetTimer(arg1:string):Promise<void>;
 
 export function StartTimer(arg1:string):Promise<void>;
 
-export function SubmitWorklfowLogs(arg1:string,arg2:number):Promise<void>;
+export function SubmitWorklog(arg1:string,arg2:number):Promise<void>;

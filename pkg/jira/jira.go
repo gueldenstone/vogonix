@@ -50,6 +50,18 @@ func NewJiraInstance(url, user, token string) (*JiraInstance, error) {
 	}, nil
 }
 
+func (jira JiraInstance) LogDebugf(fmt string, args ...interface{}) {
+	runtime.LogDebugf(jira.ctx, fmt, args...)
+}
+
+func (jira JiraInstance) LogWarningf(fmt string, args ...interface{}) {
+	runtime.LogWarningf(jira.ctx, fmt, args...)
+}
+
+func (jira JiraInstance) LogWarning(msg string) {
+	runtime.LogWarning(jira.ctx, msg)
+}
+
 func (jira *JiraInstance) Startup(ctx context.Context) {
 	jira.ctx = ctx
 }
@@ -89,7 +101,7 @@ func (jira JiraInstance) GetWorkLogs(issueId string) ([]Worklog, error) {
 	for _, jira_worklog := range jira_worklogs.Worklogs {
 		duration, err := str2dur.ParseDuration(jira_worklog.TimeSpent)
 		if err != nil {
-			runtime.LogWarning(jira.ctx, "Unable to parse duration for a worklog... skipping this entry.")
+			jira.LogWarning("Unable to parse duration for a worklog... skipping this entry.")
 			continue
 		}
 		worklogs = append(worklogs, Worklog{
@@ -114,10 +126,8 @@ func (jira JiraInstance) GetTimeSpentOnIssue(issueId string) (string, error) {
 }
 
 func (jira *JiraInstance) StartTimer(issueId string) {
-
 	// Is there already a timer?
-	_, ok := jira.timers[issueId]
-	if ok {
+	if timerData, ok := jira.timers[issueId]; ok && timerData != nil {
 		jira.timers[issueId].pauseChan <- false
 		return
 	}
@@ -134,16 +144,19 @@ func (jira *JiraInstance) StartTimer(issueId string) {
 		for {
 			select {
 			case <-timerData.closeChan:
+				jira.LogDebugf("stop %s timer because of channel close", issueId)
+				return
 			case <-jira.ctx.Done():
-				runtime.LogDebug(jira.ctx, "shutting down")
+				jira.LogDebugf("stop %s timer because of channel context done", issueId)
 				return
 			case pause := <-timerData.pauseChan:
+				jira.LogDebugf("received pause with %v for %s timer", pause, issueId)
 				paused = pause
-			case t := <-timerData.ticker.C:
+			case <-timerData.ticker.C:
 				if !paused {
 					timerData.currentDuration += 1 * time.Second
 					runtime.EventsEmit(jira.ctx, "timer_tick_"+issueId, timerData.currentDuration.Seconds())
-					runtime.LogDebugf(jira.ctx, "Tick at: %s", t)
+					jira.LogDebugf("tick for %s at: %s", issueId, timerData.currentDuration)
 				}
 			}
 		}
@@ -152,7 +165,7 @@ func (jira *JiraInstance) StartTimer(issueId string) {
 	jira.timers[issueId] = timerData
 }
 func (jira *JiraInstance) PauseTimer(issueId string) {
-	runtime.LogDebugf(jira.ctx, "Pausing timer for %s", issueId)
+	jira.LogDebugf("Pausing timer for %s", issueId)
 	jira.timers[issueId].pauseChan <- true
 }
 
@@ -165,10 +178,13 @@ func (jira *JiraInstance) ResetTimer(issueId string) {
 }
 
 func (jira JiraInstance) GetCurrentTimerValue(issueId string) int {
-	return int(jira.timers[issueId].currentDuration.Seconds())
+	if timerData, ok := jira.timers[issueId]; ok && timerData != nil {
+		return int(timerData.currentDuration.Seconds())
+	}
+	return 0
 }
 
-func (jira JiraInstance) SubmitWorklfowLogs(issueId string, seconds int) error {
-	runtime.LogDebugf(jira.ctx, "Received %d seconds for %s", seconds, issueId)
+func (jira JiraInstance) SubmitWorklog(issueId string, seconds int) error {
+	jira.LogDebugf("Received %d seconds for %s", seconds, issueId)
 	return nil
 }
