@@ -12,11 +12,25 @@
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^1.0.1",
     "@tsconfig/svelte": "^3.0.0",
-    "svelte": "^3.49.0",
+    "@types/node": "^22.9.3",
+    "autoprefixer": "^10.4.20",
+    "flowbite-svelte-icons": "^1.x",
+    "svelte": "^4.2.2",
     "svelte-check": "^2.8.0",
     "svelte-preprocess": "^4.10.7",
+    "tailwindcss": "^3.4.9",
     "tslib": "^2.4.0",
     "typescript": "^4.6.4",
     "vite": "^3.0.7"
+  },
+  "trustedDependencies": [
+    "@parcel/watcher",
+    "svelte-preprocess"
+  ],
+  "dependencies": {
+    "@popperjs/core": "^2.11.8",
+    "flowbite": "^2.5.2",
+    "flowbite-svelte": "^0.47.3",
+    "tailwind-merge": "^2.5.4"
   }
 }

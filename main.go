@@ -1,7 +1,9 @@
 package main
 
 import (
+	"changeme/pkg/jira"
 	"embed"
+	"os"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -12,11 +14,14 @@ import (
 var assets embed.FS
 
 func main() {
-	// Create an instance of the app structure
-	app := NewApp()
+
+	jira, err := jira.NewJiraInstance(os.Getenv("URL"), os.Getenv("MAIL"), os.Getenv("TOKEN"))
+	if err != nil {
+		panic(err)
+	}
 
 	// Create application with options
-	err := wails.Run(&options.App{
+	err = wails.Run(&options.App{
 		Title:  "vogonix",
 		Width:  1024,
 		Height: 768,
@@ -24,9 +29,9 @@ func main() {
 			Assets: assets,
 		},
 		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
-		OnStartup:        app.startup,
+		OnStartup:        jira.Startup,
 		Bind: []interface{}{
-			app,
+			jira,
 		},
 	})
 
