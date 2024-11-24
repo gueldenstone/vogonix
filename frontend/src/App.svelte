@@ -28,16 +28,8 @@
   // initialize
   updateIssues();
 
-  let timerValues = new Map<string, number>();
+  $: timerValues = new Map<string, number>();
   let stopWatchRefs: StopWatch[] = [];
-
-  // Function to update the timer value when the stopwatch changes
-  function handleStopwatchUpdate(issueKey: string, newValue: number) {
-    wails.LogDebug(
-      "Updating timer values for " + issueKey + " with " + newValue,
-    );
-    timerValues.set(issueKey, newValue);
-  }
 
   // Submit the timer value for a specific issue
   function submitTime(issueKey: string) {
@@ -81,9 +73,16 @@
             {/await}
           </p>
           <StopWatch
-            timer={timerValues.get(issue.Key)}
-            bind:this={stopWatchRefs[index]}
-            updateCallback={() => handleStopwatchUpdate(index)}
+            time={timerValues[issue.Key]}
+            startCallback={() => jira.StartTimer(issue.Key)}
+            pauseCallback={() => jira.PauseTimer(issue.Key)}
+            resetCallback={() => jira.ResetTimer(issue.Key)}
+            setupCallback={() => {
+              wails.EventsOn("timer_tick_" + issue.Key, (currentTime) => {
+                wails.LogDebug("Tick");
+                timerValues[issue.Key] = currentTime;
+              });
+            }}
           />
           <div class="flex items-center">
             <Button

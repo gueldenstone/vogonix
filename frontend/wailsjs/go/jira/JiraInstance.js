@@ -10,12 +10,28 @@ export function GetBaseUrl() {
   return window['go']['jira']['JiraInstance']['GetBaseUrl']();
 }
 
+export function GetCurrentTimerValue(arg1) {
+  return window['go']['jira']['JiraInstance']['GetCurrentTimerValue'](arg1);
+}
+
 export function GetTimeSpentOnIssue(arg1) {
   return window['go']['jira']['JiraInstance']['GetTimeSpentOnIssue'](arg1);
 }
 
 export function GetWorkLogs(arg1) {
   return window['go']['jira']['JiraInstance']['GetWorkLogs'](arg1);
+}
+
+export function PauseTimer(arg1) {
+  return window['go']['jira']['JiraInstance']['PauseTimer'](arg1);
+}
+
+export function ResetTimer(arg1) {
+  return window['go']['jira']['JiraInstance']['ResetTimer'](arg1);
+}
+
+export function StartTimer(arg1) {
+  return window['go']['jira']['JiraInstance']['StartTimer'](arg1);
 }
 
 export function SubmitWorklfowLogs(arg1, arg2) {

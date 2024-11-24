@@ -6,8 +6,16 @@ export function GetAssignedIssues():Promise<Array<jira.Issue>>;
 
 export function GetBaseUrl():Promise<string>;
 
+export function GetCurrentTimerValue(arg1:string):Promise<number>;
+
 export function GetTimeSpentOnIssue(arg1:string):Promise<string>;
 
 export function GetWorkLogs(arg1:string):Promise<Array<jira.Worklog>>;
+
+export function PauseTimer(arg1:string):Promise<void>;
+
+export function ResetTimer(arg1:string):Promise<void>;
+
+export function StartTimer(arg1:string):Promise<void>;
 
 export function SubmitWorklfowLogs(arg1:string,arg2:number):Promise<void>;
