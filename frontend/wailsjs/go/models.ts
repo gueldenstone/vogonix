@@ -4,6 +4,7 @@ export namespace jira {
 	    Summary: string;
 	    Assignee: string;
 	    Key: string;
+	    TimeSpent: number;
 	
 	    static createFrom(source: any = {}) {
 	        return new Issue(source);
@@ -14,6 +15,7 @@ export namespace jira {
 	        this.Summary = source["Summary"];
 	        this.Assignee = source["Assignee"];
 	        this.Key = source["Key"];
+	        this.TimeSpent = source["TimeSpent"];
 	    }
 	}
 	export class Worklog {

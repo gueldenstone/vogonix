@@ -2,6 +2,7 @@
     import { Button, Card, Spinner } from "flowbite-svelte";
     import * as jira from "@go/jira/JiraInstance";
     import * as wails from "@runtime/runtime";
+    import { formatDuration } from "@lib/util";
 
     import JiraIssueKey from "@lib/IssueKey.svelte";
     import StopWatch from "@lib/StopWatch.svelte";
@@ -53,13 +54,7 @@
                     <p
                         class="text-sm text-gray-700 flex items-center text-left"
                     >
-                        {#await jira.GetTimeSpentOnIssue(issueKey)}
-                            <Spinner />
-                        {:then time}
-                            {time}
-                        {:catch error}
-                            Error!
-                        {/await}
+                        {formatDuration(issue.TimeSpent)}
                     </p>
                     <StopWatch
                         time={timerValues[issueKey]}

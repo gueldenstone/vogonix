@@ -3,6 +3,8 @@
 import {jira} from '../models';
 import {time} from '../models';
 
+export function GetAllStoredIssues():Promise<Array<jira.Issue>>;
+
 export function GetAssignedIssues():Promise<Array<jira.Issue>>;
 
 export function GetBaseUrl():Promise<string>;
@@ -11,7 +13,7 @@ export function GetCurrentTimerValue(arg1:string):Promise<number>;
 
 export function GetTimeFromStore(arg1:string):Promise<time.Duration>;
 
-export function GetTimeSpentOnIssue(arg1:string):Promise<string>;
+export function GetTimeSpentOnIssue(arg1:string):Promise<time.Duration>;
 
 export function GetWorkLogs(arg1:string):Promise<Array<jira.Worklog>>;
 
@@ -23,6 +25,8 @@ export function LogWarningf(arg1:string,arg2:Array<any>):Promise<void>;
 
 export function PauseTimer(arg1:string):Promise<void>;
 
+export function ReadIssueDataFromStore(arg1:string):Promise<jira.Issue>;
+
 export function ResetTimer(arg1:string):Promise<void>;
 
 export function StartTimer(arg1:string):Promise<void>;
@@ -30,5 +34,7 @@ export function StartTimer(arg1:string):Promise<void>;
 export function SubmitWorklog(arg1:string):Promise<void>;
 
 export function UpdateTrackedTime(arg1:string,arg2:time.Duration):Promise<void>;
+
+export function WriteIssueDataToStore(arg1:jira.Issue):Promise<void>;
 
 export function WriteWorklogToStore(arg1:string,arg2:time.Duration):Promise<void>;

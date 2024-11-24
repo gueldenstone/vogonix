@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -31,7 +32,7 @@ func (s *Storage) AddBucket(bucket string) error {
 	})
 }
 
-func (s *Storage) UpdateValue(bucket, key, value string) error {
+func (s *Storage) UpdateValue(bucket, key string, value []byte) error {
 	return s.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(bucket))
 		if b == nil {
@@ -42,15 +43,69 @@ func (s *Storage) UpdateValue(bucket, key, value string) error {
 	})
 }
 
-func (s *Storage) GetValue(bucket, key string) (string, error) {
-	var value string = ""
+func (s *Storage) GetValue(bucket, key string) ([]byte, error) {
+	var value []byte
 	err := s.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(bucket))
 		if b == nil {
 			return fmt.Errorf("bucket '%s' not found", bucket)
 		}
-		value = string(b.Get([]byte(key)))
+		value = b.Get([]byte(key))
 		return nil
 	})
 	return value, err
+}
+
+func (s *Storage) UpdateStringValue(bucket, key, value string) error {
+	return s.UpdateValue(bucket, key, []byte(value))
+}
+
+func (s *Storage) UpdateStructuredValue(bucket, key string, data interface{}) error {
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return fmt.Errorf("unable marshal data %v: %w", data, err)
+	}
+	return s.UpdateValue(bucket, key, jsonData)
+}
+
+func (s *Storage) GetStringValue(bucket, key string) (string, error) {
+	b, err := s.GetValue(bucket, key)
+	return string(b), err
+}
+func (s *Storage) GetStructuredValue(bucket, key string, data any) error {
+	b, err := s.GetValue(bucket, key)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(b, data)
+}
+
+func (s *Storage) GetAllData(bucket string) (map[string]string, error) {
+	m := make(map[string]string)
+	err := s.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(bucket))
+		if b == nil {
+			return fmt.Errorf("bucket '%s' not found", bucket)
+		}
+		c := b.Cursor()
+
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			m[string(k)] = string(v)
+		}
+
+		return nil
+	})
+	return m, err
+}
+
+func (s *Storage) GetAllKeys(bucket string) ([]string, error) {
+	data, err := s.GetAllData(bucket)
+	if err != nil {
+		return nil, err
+	}
+	keys := make([]string, 0)
+	for k, _ := range data {
+		keys = append(keys, k)
+	}
+	return keys, nil
 }

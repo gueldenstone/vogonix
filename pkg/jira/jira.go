@@ -12,8 +12,9 @@ import (
 )
 
 const (
-	jiraTimeLayout = "2006-01-02T15:04:05.000-0700"
-	bucketName     = "worklogs"
+	jiraTimeLayout  = "2006-01-02T15:04:05.000-0700"
+	timeBucketName  = "worklogs"
+	issueBucketName = "issues"
 )
 
 type TimerData struct {
@@ -30,9 +31,10 @@ type JiraInstance struct {
 }
 
 type Issue struct {
-	Summary  string
-	Assignee string
-	Key      string
+	Summary   string
+	Assignee  string
+	Key       string
+	TimeSpent int
 }
 
 type Worklog struct {
@@ -46,7 +48,8 @@ func NewJiraInstance(url, user, token string, store *storage.Storage) (*JiraInst
 		return nil, err
 	}
 	atlassian.Auth.SetBasicAuth(user, token)
-	store.AddBucket(bucketName)
+	store.AddBucket(timeBucketName)
+	store.AddBucket(issueBucketName)
 	return &JiraInstance{
 		atlassian: atlassian,
 		timers:    make(map[string]*TimerData),
@@ -71,25 +74,39 @@ func (jira *JiraInstance) Startup(ctx context.Context) {
 }
 
 func (jira JiraInstance) GetAssignedIssues() ([]Issue, error) {
+	// get locally stored issues
+	storedIssues, err := jira.GetAllStoredIssues()
+	if err != nil {
+		return nil, err
+	}
+
+	// check if we can get remote issues
 	jql := "assignee = currentUser() AND status NOT IN ('Done') ORDER BY created DESC"
 	fields := []string{"status", "worklog", "assignee", "summary"}
 	expand := []string{}
 
-	jira_issues, _, err := jira.atlassian.Issue.Search.Get(context.Background(), jql, fields, expand, 0, 50, "")
+	ctx, _ := context.WithTimeout(jira.ctx, 1*time.Second)
+	jira_issues, _, err := jira.atlassian.Issue.Search.Get(ctx, jql, fields, expand, 0, 50, "")
 	if err != nil {
-		return nil, fmt.Errorf("unable to retrieve jira issues: %w", err)
+		jira.LogWarningf("unable to get remote issues: %w", err)
+		return storedIssues, nil
 	}
 
-	issues := make([]Issue, 0)
+	remoteIssues := make([]Issue, 0)
 	for _, jira_issue := range jira_issues.Issues {
 		issueKey := jira_issue.Key
-		issues = append(issues, Issue{
-			Key:      issueKey,
-			Summary:  jira_issue.Fields.Summary,
-			Assignee: jira_issue.Fields.Assignee.DisplayName,
-		})
+		timeSpent, _ := jira.GetTimeSpentOnIssue(issueKey)
+		issue := Issue{
+			Key:       issueKey,
+			Summary:   jira_issue.Fields.Summary,
+			Assignee:  jira_issue.Fields.Assignee.DisplayName,
+			TimeSpent: int(timeSpent.Seconds()),
+		}
+		remoteIssues = append(remoteIssues, issue)
+		jira.store.UpdateStructuredValue(issueBucketName, issueKey, issue)
 	}
-	return issues, nil
+
+	return remoteIssues, nil
 }
 
 func (jira JiraInstance) GetBaseUrl() string {
@@ -117,17 +134,16 @@ func (jira JiraInstance) GetWorkLogs(issueId string) ([]Worklog, error) {
 	return worklogs, nil
 }
 
-func (jira JiraInstance) GetTimeSpentOnIssue(issueId string) (string, error) {
+func (jira JiraInstance) GetTimeSpentOnIssue(issueId string) (time.Duration, error) {
 	worklogs, err := jira.GetWorkLogs(issueId)
 	if err != nil {
-		return "", fmt.Errorf("unable to get worklogs for %s: %w", issueId, err)
+		return 0, fmt.Errorf("unable to get worklogs for %s: %w", issueId, err)
 	}
 	summedDuration := 0 * time.Second
 	for _, worklog := range worklogs {
 		summedDuration += worklog.Duration
 	}
-
-	return str2dur.String(summedDuration), nil
+	return summedDuration, nil
 }
 
 func (jira *JiraInstance) StartTimer(issueId string) {
@@ -200,7 +216,7 @@ func (jira JiraInstance) SubmitWorklog(issueId string) error {
 }
 
 func (jira JiraInstance) GetTimeFromStore(issueId string) (time.Duration, error) {
-	worklogStr, err := jira.store.GetValue(bucketName, issueId)
+	worklogStr, err := jira.store.GetStringValue(timeBucketName, issueId)
 	if err != nil {
 		return 0 * time.Second, fmt.Errorf("no stored time for %s: %w", issueId, err)
 	}
@@ -212,7 +228,7 @@ func (jira JiraInstance) GetTimeFromStore(issueId string) (time.Duration, error)
 }
 
 func (jira JiraInstance) WriteWorklogToStore(issueId string, t time.Duration) error {
-	return jira.store.UpdateValue(bucketName, issueId, t.String())
+	return jira.store.UpdateStringValue(timeBucketName, issueId, t.String())
 }
 
 func (jira JiraInstance) UpdateTrackedTime(issueId string, trackedTime time.Duration) {
@@ -222,4 +238,32 @@ func (jira JiraInstance) UpdateTrackedTime(issueId string, trackedTime time.Dura
 		return
 	}
 	runtime.EventsEmit(jira.ctx, "timer_tick_"+issueId, int(trackedTime.Seconds()))
+}
+
+func (jira JiraInstance) WriteIssueDataToStore(issue Issue) error {
+	return jira.store.UpdateStructuredValue(issueBucketName, issue.Key, issue)
+}
+
+func (jira JiraInstance) ReadIssueDataFromStore(issueId string) (Issue, error) {
+	issue := Issue{}
+	err := jira.store.GetStructuredValue(issueBucketName, issueId, &issue)
+	return issue, err
+}
+
+func (jira JiraInstance) GetAllStoredIssues() ([]Issue, error) {
+	keys, err := jira.store.GetAllKeys(issueBucketName)
+	if err != nil {
+		return nil, err
+	}
+	issues := make([]Issue, 0)
+	for _, key := range keys {
+		issue := Issue{}
+		err := jira.store.GetStructuredValue(issueBucketName, key, &issue)
+		if err != nil {
+			jira.LogWarningf("no data for %s: %w", key, err)
+			continue
+		}
+		issues = append(issues, issue)
+	}
+	return issues, nil
 }
