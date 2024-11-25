@@ -18,16 +18,20 @@ export function GetCurrentTimerValue(arg1) {
   return window['go']['jira']['JiraInstance']['GetCurrentTimerValue'](arg1);
 }
 
+export function GetRemoteIssues() {
+  return window['go']['jira']['JiraInstance']['GetRemoteIssues']();
+}
+
 export function GetTimeFromStore(arg1) {
   return window['go']['jira']['JiraInstance']['GetTimeFromStore'](arg1);
 }
 
-export function GetTimeSpentOnIssue(arg1) {
-  return window['go']['jira']['JiraInstance']['GetTimeSpentOnIssue'](arg1);
-}
-
 export function GetWorkLogs(arg1) {
   return window['go']['jira']['JiraInstance']['GetWorkLogs'](arg1);
+}
+
+export function LogDebug(arg1) {
+  return window['go']['jira']['JiraInstance']['LogDebug'](arg1);
 }
 
 export function LogDebugf(arg1, arg2) {

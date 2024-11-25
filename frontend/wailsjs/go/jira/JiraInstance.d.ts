@@ -9,13 +9,15 @@ export function GetAssignedIssues():Promise<Array<jira.Issue>>;
 
 export function GetBaseUrl():Promise<string>;
 
-export function GetCurrentTimerValue(arg1:string):Promise<number>;
+export function GetCurrentTimerValue(arg1:string):Promise<time.Duration>;
+
+export function GetRemoteIssues():Promise<Array<jira.Issue>>;
 
 export function GetTimeFromStore(arg1:string):Promise<time.Duration>;
 
-export function GetTimeSpentOnIssue(arg1:string):Promise<time.Duration>;
-
 export function GetWorkLogs(arg1:string):Promise<Array<jira.Worklog>>;
+
+export function LogDebug(arg1:string):Promise<void>;
 
 export function LogDebugf(arg1:string,arg2:Array<any>):Promise<void>;
 

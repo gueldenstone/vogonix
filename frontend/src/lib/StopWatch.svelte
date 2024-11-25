@@ -1,8 +1,8 @@
 <script lang="ts">
-    import { Button } from "flowbite-svelte";
+    import { Button, Badge } from "flowbite-svelte";
     import * as Icons from "flowbite-svelte-icons";
     import { onMount } from "svelte";
-    import { formatDuration } from "@lib/util";
+    import { formatDurationFromNanoseconds } from "@lib/util";
 
     // export let time: number = 0;
     export let isRunning: boolean = false;
@@ -20,14 +20,15 @@
     });
 </script>
 
-<div class="stopwatch">
+<div class="grid grid-cols-[30%,70%] gap-2 align-center">
     <!-- Display the timer -->
-    <div>
-        {formatDuration(time)}
-    </div>
+    <Badge color="dark" border>
+        <Icons.ClockSolid class="w-2.5 h-2.5 me-1.5" />
+        {formatDurationFromNanoseconds(time)}
+    </Badge>
 
     <!-- Control buttons -->
-    <div class="buttons">
+    <div>
         {#if !isRunning}
             <Button
                 on:click={() => {

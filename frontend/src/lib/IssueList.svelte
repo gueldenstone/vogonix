@@ -2,12 +2,12 @@
     import { Button, Card, Spinner } from "flowbite-svelte";
     import * as jira from "@go/jira/JiraInstance";
     import * as wails from "@runtime/runtime";
-    import { formatDuration } from "@lib/util";
 
     import JiraIssueKey from "@lib/IssueKey.svelte";
     import StopWatch from "@lib/StopWatch.svelte";
     import * as Icons from "flowbite-svelte-icons";
     import { onMount } from "svelte";
+    import WorkLogList from "./WorkLogList.svelte";
 
     // base url
     let jiraBaseUrl: string;
@@ -16,6 +16,7 @@
     // local state for timer values
     $: timerValues = new Map<string, number>();
 
+    // reactive issue promise for rendering the issues
     $: issuesPromise = jira.GetAssignedIssues();
 
     function setupTimerEventListener(issueKey: string) {
@@ -31,9 +32,15 @@
     onMount(async () => {
         let issueList = await issuesPromise;
         issueList.forEach(async (issue) => {
-            timerValues[issue.Key] = await jira.GetCurrentTimerValue(issue.Key);
+            timerValues[issue.key] = await jira.GetCurrentTimerValue(issue.key);
         });
     });
+
+    wails.EventsOn("update_worklogs", refresh);
+
+    function submitPossible(issueKey: string) {
+        return timerValues[issueKey] > 60 * 1e9;
+    }
 </script>
 
 <div class="flex p-2 gap-2 flex-col">
@@ -42,20 +49,15 @@
             <Spinner size="10" />
         </div>
     {:then issues}
-        {#each issues as issue, index (issue.Key)}
-            {@const issueKey = issue.Key}
+        {#each issues as issue, index (issue.key)}
+            {@const issueKey = issue.key}
             <Card size="xl" class="h-full grow">
-                <div class="grid grid-cols-[70%,5%,20%,5%]">
+                <div class="grid grid-cols-[75%,20%,5%]">
                     <h5
                         class="flex text-lg text-left items-center font-bold text-gray-900"
                     >
-                        <JiraIssueKey {issueKey} baseUrl={jiraBaseUrl} /> - {issue.Summary}
+                        <JiraIssueKey {issueKey} baseUrl={jiraBaseUrl} /> - {issue.summary}
                     </h5>
-                    <p
-                        class="text-sm text-gray-700 flex items-center text-left"
-                    >
-                        {formatDuration(issue.TimeSpent)}
-                    </p>
                     <StopWatch
                         time={timerValues[issueKey]}
                         startCallback={() => jira.StartTimer(issueKey)}
@@ -64,14 +66,30 @@
                         setupCallback={() => setupTimerEventListener(issueKey)}
                     />
                     <div class="flex items-center">
-                        <Button
-                            size="xs"
-                            class="h-10"
-                            on:click={() => jira.SubmitWorklog(issueKey)}
-                            ><Icons.ShareAllSolid /></Button
-                        >
+                        {#if timerValues[issueKey] > 60 * 1e9}
+                            <Button
+                                size="xs"
+                                class="h-10"
+                                on:click={() =>
+                                    jira
+                                        .SubmitWorklog(issueKey)
+                                        .catch((err) => wails.LogError(err))}
+                                ><Icons.ShareAllSolid />
+                            </Button>
+                        {:else}
+                            <Button disabled size="xs" class="h-10"
+                                ><Icons.ShareAllSolid />
+                            </Button>
+                        {/if}
                     </div>
                 </div>
+                {#await jira.GetWorkLogs(issueKey)}
+                    <div class="text-center p-10">
+                        <Spinner size="10" />
+                    </div>
+                {:then workLogs}
+                    <WorkLogList {workLogs} />
+                {/await}
             </Card>
         {/each}
     {/await}
