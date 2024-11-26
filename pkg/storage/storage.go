@@ -104,7 +104,7 @@ func (s *Storage) GetAllKeys(bucket string) ([]string, error) {
 		return nil, err
 	}
 	keys := make([]string, 0)
-	for k, _ := range data {
+	for k := range data {
 		keys = append(keys, k)
 	}
 	return keys, nil
