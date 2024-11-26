@@ -7,7 +7,6 @@ import (
 
 	"github.com/gueldenstone/vogonix/pkg/config"
 	"github.com/gueldenstone/vogonix/pkg/jira"
-	"github.com/gueldenstone/vogonix/pkg/storage"
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/logger"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -31,13 +30,7 @@ func main() {
 		panic(err)
 	}
 
-	store, err := storage.NewStorage(filepath.Join(configDir, "data.db"))
-	if err != nil {
-		panic(err)
-	}
-	defer store.Close()
-
-	jira, err := jira.NewJiraInstance(cfg.Url, cfg.User, cfg.Token, store)
+	jira, err := jira.NewJiraInstance(cfg.Url, cfg.User, cfg.Token, filepath.Join(configDir, "data.db"))
 	if err != nil {
 		panic(err)
 	}
@@ -52,6 +45,7 @@ func main() {
 		},
 		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
 		OnStartup:        jira.Startup,
+		OnShutdown:       jira.Shutdown,
 		LogLevel:         logger.DEBUG,
 		Bind: []interface{}{
 			jira,
