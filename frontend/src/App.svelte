@@ -1,5 +1,4 @@
 <script lang="ts">
-  import "./app.css";
   import {
     Navbar,
     NavBrand,
@@ -35,3 +34,9 @@
   </Navbar>
   <IssueList bind:this={issueListRef} />
 </main>
+
+<style>
+  @import "tailwindcss/base";
+  @import "tailwindcss/components";
+  @import "tailwindcss/utilities";
+</style>
