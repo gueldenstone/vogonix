@@ -1,0 +1,34 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        build:
+          [
+            { name: vogonix-linux, platform: linux/amd64, os: ubuntu-latest },
+            {
+              name: vogonix-windows,
+              platform: windows/amd64,
+              os: windows-latest,
+            },
+            {
+              name: vogonix-darwin,
+              platform: darwin/universal,
+              os: macos-latest,
+            },
+          ]
+    runs-on: ${{ matrix.build.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: dAppServer/wails-build-action@v2.2
+        with:
+          build-name: ${{ matrix.build.name }}
+          build-platform: ${{ matrix.build.platform }}
