@@ -11,17 +11,9 @@ jobs:
       matrix:
         build:
           [
-            { name: vogonix-linux, platform: linux/amd64, os: ubuntu-latest },
-            {
-              name: vogonix-windows,
-              platform: windows/amd64,
-              os: ubuntu-latest,
-            },
-            {
-              name: vogonix-darwin,
-              platform: darwin/universal,
-              os: macos-latest,
-            },
+            { name: vogonix, platform: linux/amd64, os: ubuntu-latest },
+            { name: vogonix, platform: windows/amd64, os: ubuntu-latest },
+            { name: vogonix, platform: darwin/universal, os: macos-latest },
           ]
     runs-on: ${{ matrix.build.os }}
     steps:
