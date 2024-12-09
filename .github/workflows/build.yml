@@ -11,19 +11,11 @@ jobs:
       matrix:
         build:
           [
-            { name: vogonix-linux, platform: linux/amd64, os: ubuntu-latest },
-            {
-              name: vogonix-windows,
-              platform: windows/amd64,
-              os: windows-latest,
-            },
-            {
-              name: vogonix-darwin,
-              platform: darwin/universal,
-              os: macos-latest,
-            },
+            { name: vogonix-linux, platform: linux/amd64 },
+            { name: vogonix-windows, platform: windows/amd64 },
+            { name: vogonix-darwin, platform: darwin/universal },
           ]
-    runs-on: ${{ matrix.build.os }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
