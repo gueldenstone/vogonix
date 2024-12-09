@@ -2,6 +2,7 @@ package jira
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"time"
 
@@ -29,35 +30,53 @@ type JiraInstance struct {
 	store       *storage.Storage
 	storeDir    string
 	OfflineMode bool
+	url         string
+	user        string
+	token       string
+}
+
+func reportErrorUi(ctx context.Context, err error) {
+	runtime.MessageDialog(ctx, runtime.MessageDialogOptions{
+		Type:    runtime.ErrorDialog,
+		Title:   "Error",
+		Message: fmt.Sprintf("An error occurred: %s", err.Error()),
+	})
+
 }
 
 func NewJiraInstance(url, user, token, storeDir string) (*JiraInstance, error) {
-	atlassian, err := v3.New(nil, url)
-	if err != nil {
-		return nil, err
-	}
-	atlassian.Auth.SetBasicAuth(user, token)
 
 	return &JiraInstance{
-		atlassian:   atlassian,
+		atlassian:   nil,
 		timers:      make(map[string]*TimerData),
 		storeDir:    storeDir,
+		url:         url,
+		user:        user,
+		token:       token,
 		OfflineMode: false,
 	}, nil
 }
 
 func (jira *JiraInstance) Startup(ctx context.Context) {
 	jira.ctx = ctx
+	atlassian, err := v3.New(nil, jira.url)
+	if err != nil {
+		reportErrorUi(ctx, err)
+		panic(err)
+	}
+	atlassian.Auth.SetBasicAuth(jira.user, jira.token)
 	if jira.store == nil {
 
 		store, err := storage.NewStorage(jira.storeDir)
 		if err != nil {
+			reportErrorUi(ctx, err)
 			panic(err)
 		}
 		store.AddBucket(timeBucketName)
 		store.AddBucket(issueBucketName)
 		jira.store = store
 	}
+	jira.atlassian = atlassian
 }
 
 func (jira *JiraInstance) Shutdown(ctx context.Context) {
@@ -65,7 +84,7 @@ func (jira *JiraInstance) Shutdown(ctx context.Context) {
 }
 
 func (jira JiraInstance) GetAssignedIssues() ([]Issue, error) {
-	// retrieval mail fail
+	// retrieval may fail
 	remoteIssues, err := jira.getRemoteIssues()
 	if err != nil {
 		jira.OfflineMode = true
