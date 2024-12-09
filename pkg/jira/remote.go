@@ -3,7 +3,6 @@ package jira
 import (
 	"context"
 	"fmt"
-	"sort"
 	"time"
 
 	"github.com/ctreminiom/go-atlassian/pkg/infra/models"
@@ -46,7 +45,7 @@ func (jira JiraInstance) getRemoteIssues() ([]Issue, error) {
 }
 
 func (jira JiraInstance) getWorkLogs(issueId string) ([]Worklog, error) {
-	var worklogs WorkLogs = make([]Worklog, 0)
+	var worklogs Worklogs = make([]Worklog, 0)
 	jira_worklogs, response, err := jira.atlassian.Issue.Worklog.Issue(jira.ctx, issueId, 0, 1000, 0, []string{"all"})
 	if err != nil {
 		return worklogs, fmt.Errorf("unable to retrieve worklogs from: %s: %w", response.Status, err)
@@ -66,11 +65,10 @@ func (jira JiraInstance) getWorkLogs(issueId string) ([]Worklog, error) {
 		worklogs = append(worklogs, Worklog{
 			Duration: duration,
 			Author:   jira_worklog.Author.DisplayName,
-			Updated:  updated.Format(time.DateTime),
+			Updated:  updated,
 		})
 
 	}
-	sort.Sort(ByUpdated{worklogs})
 	return worklogs, nil
 }
 

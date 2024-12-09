@@ -5,7 +5,8 @@ export namespace jira {
 	    comment?: string;
 	    submitted?: boolean;
 	    author?: string;
-	    updated?: string;
+	    // Go type: time
+	    updated?: any;
 	
 	    static createFrom(source: any = {}) {
 	        return new Worklog(source);
@@ -17,8 +18,26 @@ export namespace jira {
 	        this.comment = source["comment"];
 	        this.submitted = source["submitted"];
 	        this.author = source["author"];
-	        this.updated = source["updated"];
+	        this.updated = this.convertValues(source["updated"], null);
 	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class Issue {
 	    summary?: string;

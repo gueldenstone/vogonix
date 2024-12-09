@@ -7,17 +7,17 @@ type Worklog struct {
 	Comment   string        `json:"comment,omitempty"`
 	Submitted bool          `json:"submitted,omitempty"`
 	Author    string        `json:"author,omitempty"`
-	Updated   string        `json:"updated,omitempty"`
+	Updated   time.Time     `json:"updated,omitempty"`
 }
 
 // sorting
-type WorkLogs []Worklog
+type Worklogs []Worklog
 
-func (wls WorkLogs) Len() int {
+func (wls Worklogs) Len() int {
 	return len(wls)
 }
-func (wls WorkLogs) Swap(i, j int) { wls[i], wls[j] = wls[j], wls[i] }
+func (wls Worklogs) Swap(i, j int) { wls[i], wls[j] = wls[j], wls[i] }
 
-type ByUpdated struct{ WorkLogs }
+type ByUpdated struct{ Worklogs }
 
-func (s ByUpdated) Less(i, j int) bool { return s.WorkLogs[i].Updated < s.WorkLogs[j].Updated }
+func (s ByUpdated) Less(i, j int) bool { return s.Worklogs[i].Updated.Before(s.Worklogs[j].Updated) }

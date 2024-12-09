@@ -22,12 +22,6 @@
             timerValues[issue.key] = await jira.GetCurrentTimerValue(issue.key);
         });
     });
-
-    wails.EventsOn("update_worklogs", refresh);
-
-    function submitPossible(issueKey: string) {
-        return timerValues[issueKey] > 60 * 1e9;
-    }
 </script>
 
 <div class="flex p-2 gap-2 flex-col">

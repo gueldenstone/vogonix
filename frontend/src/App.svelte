@@ -28,7 +28,6 @@
     </NavBrand>
     <div class="flex md:order-2">
       <Button pill size="sm" on:click={handleRefresh}>Refresh</Button>
-      <NavHamburger />
     </div>
     <NavUl></NavUl>
   </Navbar>

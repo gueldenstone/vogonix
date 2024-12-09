@@ -5,9 +5,9 @@ import (
 )
 
 type ConfigDatabase struct {
-	Url   string `yaml:"url" env:"URL"`
-	User  string `yaml:"user" env:"USER"`
-	Token string `yaml:"token" env:"TOKEN"`
+	Url   string `yaml:"url" env:"VOGONIX_URL"`
+	User  string `yaml:"user" env:"VOGONIX_USER"`
+	Token string `yaml:"token" env:"VOGONIX_TOKEN"`
 }
 
 func ReadConfig(configFile string) (*ConfigDatabase, error) {

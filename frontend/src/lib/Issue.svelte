@@ -1,14 +1,14 @@
 <script lang="ts">
-    import { Button, Card, Spinner } from "flowbite-svelte";
+    import { Card } from "flowbite-svelte";
     import JiraIssueKey from "@lib/IssueKey.svelte";
     import StopWatch from "@lib/StopWatch.svelte";
-    import * as Icons from "flowbite-svelte-icons";
-    import WorkLogList from "./WorkLogList.svelte";
+    import WorkLogList from "@lib/WorkLogList.svelte";
     import * as jira from "@go/jira/JiraInstance";
     import * as wails from "@runtime/runtime";
     import * as models from "@go/models";
+    import SubmitButton from "@lib/SubmitButton.svelte";
 
-    export let timerValue;
+    export let timerValue: number;
     export let issue: models.jira.Issue;
 
     $: issueKey = issue.key;
@@ -22,12 +22,15 @@
             timerValue = currentTime;
         });
     }
+
+    $: submitEnabled = timerValue > 60 * 1e9;
 </script>
 
-<Card size="xl" class="h-full grow">
-    <div class="grid grid-cols-[75%,20%,5%]">
+<Card size="xl" class="grow">
+    <div class="grid grid-cols-[60%,30%,10%] gap-1">
         <h5 class="flex text-lg text-left items-center font-bold text-gray-900">
-            <JiraIssueKey {issueKey} baseUrl={jiraBaseUrl} /> - {issue.summary}
+            <JiraIssueKey {issueKey} baseUrl={jiraBaseUrl} /> -
+            <span class="truncate"> {issue.summary}</span>
         </h5>
         <StopWatch
             time={timerValue}
@@ -37,28 +40,8 @@
             setupCallback={setupTimerEventListener}
         />
         <div class="flex items-center">
-            {#if timerValue > 60 * 1e9}
-                <Button
-                    size="xs"
-                    class="h-10"
-                    on:click={() =>
-                        jira
-                            .SubmitWorklog(issueKey)
-                            .catch((err) => wails.LogError(err))}
-                    ><Icons.ShareAllSolid />
-                </Button>
-            {:else}
-                <Button disabled size="xs" class="h-10"
-                    ><Icons.ShareAllSolid />
-                </Button>
-            {/if}
+            <SubmitButton enabled={submitEnabled} {issueKey} />
         </div>
     </div>
-    {#await jira.GetWorkLogs(issueKey)}
-        <div class="text-center p-10">
-            <Spinner size="10" />
-        </div>
-    {:then workLogs}
-        <WorkLogList {workLogs} />
-    {/await}
+    <WorkLogList {issueKey} />
 </Card>

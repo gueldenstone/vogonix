@@ -1,26 +1,12 @@
-export function formatDuration(seconds: number): string {
-  if (seconds < 0) {
+function formatDurationFromNanosecondsInternal(nanoseconds: number): string[] {
+  if (nanoseconds < 0) {
     throw new Error("Duration cannot be negative");
   }
-
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const secs = seconds % 60;
-
-  return [
-    hours > 0 ? `${hours}h` : null,
-    minutes > 0 ? `${minutes}m` : null,
-    `${secs}s`
-  ]
-    .filter(Boolean)
-    .join(" ");
-}
-
-export function formatDurationFromNanoseconds(nanoseconds: number): string {
   if (nanoseconds == 0) {
-    return '0s'
+    return ['0s']
   }
   const units = [
+    { label: 'y', seconds: 365 * 24 * 60 * 60 }, // years
     { label: 'w', seconds: 7 * 24 * 60 * 60 }, // weeks
     { label: 'd', seconds: 24 * 60 * 60 },     // days
     { label: 'h', seconds: 60 * 60 },          // hours
@@ -40,5 +26,23 @@ export function formatDurationFromNanoseconds(nanoseconds: number): string {
     }
   }
 
-  return parts.join(' ');
+  return parts
+}
+
+
+export function formatDurationFromNanoseconds(nanoseconds: number): string {
+  return formatDurationFromNanosecondsInternal(nanoseconds).join(' ');
+}
+
+export function formatDuration(seconds: number): string {
+  return formatDurationFromNanosecondsInternal(seconds * 1e9).join(' ')
+}
+
+export function timeAgo(inputTime: string): string {
+  const past = new Date(inputTime);
+  let diffInNanoseconds = Math.floor((Date.now().valueOf() - past.valueOf()) * 1e6);
+  if (diffInNanoseconds < (1e9 * 60)) {
+    return "just now"; // For times less than 1 minute ago
+  }
+  return formatDurationFromNanosecondsInternal(diffInNanoseconds)[0] + " ago";
 }

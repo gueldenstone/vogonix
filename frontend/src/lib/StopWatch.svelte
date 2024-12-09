@@ -20,15 +20,15 @@
     });
 </script>
 
-<div class="grid grid-cols-[30%,70%] gap-2 align-center">
+<div class="grid grid-cols-[30%,70%] gap-2 align-center items-center">
     <!-- Display the timer -->
-    <Badge color="dark" border>
-        <Icons.ClockSolid class="w-2.5 h-2.5 me-1.5" />
+    <Badge color="dark" border class=" min-h-8">
+        <!-- <Icons.ClockSolid class="w-2.5 h-2.5 me-1.5" /> -->
         {formatDurationFromNanoseconds(time)}
     </Badge>
 
     <!-- Control buttons -->
-    <div>
+    <div class="grid grid-cols-2 gap-2 m-4">
         {#if !isRunning}
             <Button
                 on:click={() => {

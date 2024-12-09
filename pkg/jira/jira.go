@@ -2,6 +2,7 @@ package jira
 
 import (
 	"context"
+	"sort"
 	"time"
 
 	v3 "github.com/ctreminiom/go-atlassian/jira/v3"
@@ -84,7 +85,9 @@ func (jira JiraInstance) GetAssignedIssues() ([]Issue, error) {
 }
 
 func (jira JiraInstance) GetWorkLogs(issueId string) ([]Worklog, error) {
-	return jira.getWorkLogs(issueId)
+	worklogs, err := jira.getWorkLogs(issueId)
+	sort.Sort(sort.Reverse(ByUpdated{worklogs}))
+	return worklogs, err
 }
 
 func (jira *JiraInstance) StartTimer(issueId string) {
@@ -96,7 +99,7 @@ func (jira *JiraInstance) StartTimer(issueId string) {
 
 	// Setup new timer
 	timerData := &TimerData{
-		ticker:    time.NewTicker(100 * time.Millisecond),
+		ticker:    time.NewTicker(1 * time.Second),
 		closeChan: make(chan bool),
 		pauseChan: make(chan bool),
 	}
@@ -157,7 +160,7 @@ func (jira JiraInstance) SubmitWorklog(issueId string) error {
 		return err
 	}
 	jira.ResetTimer(issueId)
-	runtime.EventsEmit(jira.ctx, "update_worklogs")
+	runtime.EventsEmit(jira.ctx, "update_worklogs_"+issueId)
 	return nil
 }
 
