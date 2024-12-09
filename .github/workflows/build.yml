@@ -11,11 +11,19 @@ jobs:
       matrix:
         build:
           [
-            { name: vogonix-linux, platform: linux/amd64 },
-            { name: vogonix-windows, platform: windows/amd64 },
-            { name: vogonix-darwin, platform: darwin/universal },
+            { name: vogonix-linux, platform: linux/amd64, os: ubuntu-latest },
+            {
+              name: vogonix-windows,
+              platform: windows/amd64,
+              os: ubuntu-latest,
+            },
+            {
+              name: vogonix-darwin,
+              platform: darwin/universal,
+              os: macos-latest,
+            },
           ]
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.build.os }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -23,7 +31,7 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-      - uses: dAppServer/wails-build-action@v2.2
+      - uses: dAppServer/wails-build-action@main
         with:
           build-name: ${{ matrix.build.name }}
           build-platform: ${{ matrix.build.platform }}
