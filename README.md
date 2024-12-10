@@ -1,8 +1,12 @@
-# README
+# vogonix
 
 ## About
 
-This is the official Wails Svelte-TS template.
+vogonix is a jira client for time tracking. The aim is to provide an offline-first app to track time for a certain issue assigned to the user.
+
+The app is in early development and still unstable.
+
+The project uses (wails)[https://wails.io/] to provide a cross-platform desktop application. The backend is written in (go)[https://go.dev/], the frontend uses (svelte)[https://svelte.dev/].
 
 ## Live Development
 
